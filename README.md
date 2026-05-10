@@ -112,6 +112,7 @@ await Routix.trackCustomEvent('sign_up_completed', {
 
 - **Documentation**: [routix.link/docs](https://routix.link/docs/)
 - **Issues**: Report bugs via [GitHub Issues](https://github.com/shivbo96/react-native-routix/issues)
+<!-- - **Discord**: [Join our community](https://discord.gg/routix) -->
 
 ---
 
