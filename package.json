@@ -1,6 +1,6 @@
 {
   "name": "react-native-routix",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "The official Routix SDK for React Native. Attribute deep links and track conversion events.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
