@@ -1,0 +1,90 @@
+{
+  "name": "react-native-routix",
+  "version": "1.0.0",
+  "description": "The official Routix SDK for React Native. Attribute deep links and track conversion events.",
+  "main": "lib/commonjs/index",
+  "module": "lib/module/index",
+  "types": "lib/typescript/index.d.ts",
+  "source": "src/index",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "cpp",
+    "*.podspec",
+    "!lib/typescript/example",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!local.properties",
+    "!**/.DS_Store"
+  ],
+  "scripts": {
+    "test": "jest --passWithNoTests",
+    "typescript": "tsc --noEmit",
+    "prepare": "bob build"
+  },
+  "keywords": [
+    "react-native",
+    "routix",
+    "attribution",
+    "deep linking",
+    "deferred links",
+    "analytics"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shivbo96/react-native-routix.git"
+  },
+  "author": "Routix Team <hello@routix.link>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shivbo96/react-native-routix/issues"
+  },
+  "homepage": "https://github.com/shivbo96/react-native-routix#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": ">=1.17.0",
+    "@react-native-clipboard/clipboard": ">=1.10.0",
+    "@react-native-google-play-install-referrer/install-referrer": ">=1.0.0",
+    "react": "*",
+    "react-native": "*",
+    "react-native-device-info": ">=10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-google-play-install-referrer/install-referrer": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-clipboard/clipboard": "^1.15.0",
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.72.0",
+    "react": "18.2.0",
+    "react-native": "^0.72.17",
+    "react-native-builder-bob": "^0.20.0",
+    "react-native-device-info": "^14.0.0",
+    "typescript": "^5.9.3"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}
