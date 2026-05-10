@@ -61,26 +61,22 @@ cd ios && pod install
 Initialize the SDK at the root of your application (e.g., `App.js` or `index.js`).
 
 ```typescript
-import Routix from 'react-native-routix';
+import { Routix } from 'react-native-routix';
 
 Routix.initialize({
   apiKey: 'your_workspace_api_key'
 });
 ```
 
-### 2. Resolve Deep Links
-Resolve attribution data on app launch.
+### 2. Resolve Deep Links (Deferred)
+Resolve attribution data on app launch for users arriving via the App Store/Play Store.
 
 ```typescript
 const resolveAttribution = async () => {
   try {
     const match = await Routix.resolve({ enableClipboard: true });
-    
     if (match?.success) {
-      console.log('Attributed to:', match.shortCode);
-      console.log('Source:', match.matchSource);
-      
-      const promo = match.metadata?.promo_code;
+      console.log('Attributed to:', match.short_code);
     }
   } catch (error) {
     console.error('Routix Resolve Error:', error);
@@ -88,18 +84,32 @@ const resolveAttribution = async () => {
 };
 ```
 
-### 3. Track Conversion Events
+### 3. Handle Deep Links (Direct)
+Parses a direct deep link URL when the app is already installed.
 
-**Sales & Revenue**
 ```typescript
-await Routix.trackSale('SUMMER_24', {
-  amount: 29.99,
-  currency: 'USD',
-  metadata: { plan: 'pro' }
+import { Linking } from 'react-native';
+
+Linking.getInitialURL().then((url) => {
+  if (url) {
+    const match = Routix.handleDeepLink(url);
+    if (match?.success) {
+      console.log('Opened via:', match.short_code);
+    }
+  }
 });
 ```
 
-**Custom Events**
+### 4. Track Events
+Tie conversion events directly to a campaign short code for ROI analysis.
+
+```typescript
+await Routix.trackSale('SUMMER_24', 29.99, 'USD', { plan: 'pro' });
+```
+
+### 5. Track Custom Events
+Track workspace-level actions like signups or tutorial completions independent of any link.
+
 ```typescript
 await Routix.trackCustomEvent('sign_up_completed', {
   method: 'email'

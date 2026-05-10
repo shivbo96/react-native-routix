@@ -24,7 +24,7 @@ export interface ResolveOptions {
 class RoutixEngine {
   private apiKey: string | null = null;
   private readonly baseUrl: string = 'https://api.routix.link';
-  private version: string = '1.0.0';
+  private version: string = '1.0.4';
   private listeners: Array<(match: RoutixMatch) => void> = [];
 
   public initialize(config: RoutixConfig) {
