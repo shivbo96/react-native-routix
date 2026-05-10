@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/react-native-routix?color=blue&logo=npm)](https://www.npmjs.com/package/react-native-routix)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/shivbo96/flowlnk/test-sdk-rn.yml?branch=main&logo=github)](https://github.com/shivbo96/flowlnk/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/shivbo96/react-native-routix/test-sdk-rn.yml?branch=main&logo=github)](https://github.com/shivbo96/react-native-routix/actions)
 
 The official **Routix SDK** for React Native. Professional attribution, deep linking, and conversion tracking for your cross-platform mobile apps.
 
@@ -111,7 +111,7 @@ await Routix.trackCustomEvent('sign_up_completed', {
 ## 🤝 Support
 
 - **Documentation**: [docs.routix.link](https://docs.routix.link)
-- **Issues**: Report bugs via [GitHub Issues](https://github.com/shivbo96/flowlnk/issues)
+- **Issues**: Report bugs via [GitHub Issues](https://github.com/shivbo96/react-native-routix/issues)
 - **Discord**: [Join our community](https://discord.gg/routix)
 
 ---
