@@ -1,6 +1,6 @@
 {
   "name": "react-native-routix",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The official Routix SDK for React Native. Attribute deep links and track conversion events.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -55,10 +55,17 @@
     "@react-native-google-play-install-referrer/install-referrer": ">=1.0.0",
     "react": "*",
     "react-native": "*",
-    "react-native-device-info": ">=10.0.0"
+    "react-native-device-info": ">=10.0.0",
+    "react-native-localize": ">=3.0.0"
   },
   "peerDependenciesMeta": {
+    "@react-native-clipboard/clipboard": {
+      "optional": true
+    },
     "@react-native-google-play-install-referrer/install-referrer": {
+      "optional": true
+    },
+    "react-native-localize": {
       "optional": true
     }
   },
