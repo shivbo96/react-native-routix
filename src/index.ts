@@ -1,13 +1,48 @@
-import DeviceInfo from 'react-native-device-info';
 import { Platform } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ---------------------------------------------------------------------------
+// Lazy-loaded optional peer dependencies
+// Using separate boolean "loaded" flags to avoid re-entering require() after
+// a failed attempt (the `!false === true` bug is avoided this way).
+// ---------------------------------------------------------------------------
+let _DeviceInfo: any = null;
+let _DeviceInfoLoaded = false;
+let _Clipboard: any = null;
+let _ClipboardLoaded = false;
+
+function getDeviceInfoModule(): any | null {
+  if (!_DeviceInfoLoaded) {
+    _DeviceInfoLoaded = true;
+    try {
+      _DeviceInfo = require('react-native-device-info');
+    } catch (e) {
+      console.warn('[Routix] react-native-device-info not installed. Device metadata will be limited.');
+    }
+  }
+  return _DeviceInfo ?? null;
+}
+
+function getClipboardModule(): any | null {
+  if (!_ClipboardLoaded) {
+    _ClipboardLoaded = true;
+    try {
+      _Clipboard = require('@react-native-clipboard/clipboard');
+    } catch (e) {
+      console.warn('[Routix] @react-native-clipboard/clipboard not installed. Clipboard attribution disabled.');
+    }
+  }
+  return _Clipboard ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Public interfaces
+// ---------------------------------------------------------------------------
 export interface RoutixMatch {
   success: boolean;
   short_code?: string;
   original_url?: string;
-  match_source?: string; // Maps to attribution_source or match_type
+  match_source?: string;
   confidence?: number;
   metadata?: any;
   timestamp?: string;
@@ -21,10 +56,13 @@ export interface ResolveOptions {
   enableClipboard?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Engine
+// ---------------------------------------------------------------------------
 class RoutixEngine {
   private apiKey: string | null = null;
   private readonly baseUrl: string = 'https://api.routix.link';
-  private version: string = '1.0.4';
+  private version: string = '1.0.5';
   private listeners: Array<(match: RoutixMatch) => void> = [];
 
   public initialize(config: RoutixConfig) {
@@ -121,41 +159,46 @@ class RoutixEngine {
     try {
       let clipboardToken = null;
       let installReferrer = null;
-      
+
       // 2. Deterministic Match: Android Install Referrer
       if (Platform.OS === 'android') {
-          try {
-              // Try to load the native referrer client (optional peer dep)
-              const { InstallReferrerClient } = require('@react-native-google-play-install-referrer/install-referrer');
-              const referrerDetails = await InstallReferrerClient.getReferrer();
-              installReferrer = referrerDetails.installReferrer;
-              console.log('[Routix] Android Install Referrer detected:', installReferrer);
-          } catch (e) {
-              console.log('[Routix] Android Install Referrer client not found, falling back to probabilistic.');
-          }
+        try {
+          const { InstallReferrerClient } = require('@react-native-google-play-install-referrer/install-referrer');
+          const referrerDetails = await InstallReferrerClient.getReferrer();
+          installReferrer = referrerDetails.installReferrer;
+          console.log('[Routix] Android Install Referrer detected:', installReferrer);
+        } catch (e) {
+          console.log('[Routix] Android Install Referrer client not found, falling back to probabilistic.');
+        }
       }
 
       // 3. Probabilistic Match: Clipboard Fallback (iOS specific utility)
       if (options.enableClipboard) {
+        const ClipboardMod = getClipboardModule();
+        if (!ClipboardMod) {
+          console.warn('[Routix] Clipboard skipped: @react-native-clipboard/clipboard not installed.');
+        } else {
           try {
-              const content = await Clipboard.getString();
-              if (content && content.startsWith('rtx_')) {
-                clipboardToken = content;
-                console.log('[Routix] Clipboard attribution token found.');
-              }
+            const ClipboardAPI = ClipboardMod.default ?? ClipboardMod;
+            const content = await ClipboardAPI.getString();
+            if (content && content.startsWith('rtx_')) {
+              clipboardToken = content;
+              console.log('[Routix] Clipboard attribution token found.');
+            }
           } catch (e) {
-              console.error('[Routix] Clipboard read failed:', e);
+            console.error('[Routix] Clipboard read failed:', e);
           }
+        }
       }
 
       const deviceInfo = await this.getDeviceInfo();
-      
+
       // Use whichever token we found (Referrer has priority)
       const token = installReferrer || (clipboardToken ? clipboardToken.substring(4) : null);
 
       const data = await this.makeRequest(`${this.baseUrl}/api/v1/sdk/resolve`, {
         install_referrer: token,
-        device_info: deviceInfo
+        device_info: deviceInfo,
       });
 
       if (!data) return null;
@@ -167,15 +210,15 @@ class RoutixEngine {
         match_source: data.attribution_source || data.match_type || data.match_source,
         confidence: data.confidence ?? 1.0,
         metadata: data.metadata,
-        timestamp: data.timestamp
+        timestamp: data.timestamp,
       };
-      
+
       if (match.success) {
         await AsyncStorage.setItem('routix_resolved', 'true');
         this.notifyListeners(match);
         console.log('[Routix] Attribution resolved successfully via:', match.match_source);
       }
-      
+
       return match;
     } catch (error: any) {
       console.error('[Routix] Attribution resolution failed:', error.message);
@@ -191,7 +234,7 @@ class RoutixEngine {
         ...metadata,
         ...(type === 'track' && metadata?.eventType ? { event_type: metadata.eventType } : {}),
         sdk_v: `react-native-${this.version}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return true;
@@ -203,9 +246,9 @@ class RoutixEngine {
 
   public trackInstall = (code: string) => this.trackEvent(code, 'install');
   public trackLead = (code: string, metadata?: any) => this.trackEvent(code, 'lead', metadata);
-  public trackSale = (code: string, amount: number, currency: string = 'USD', metadata?: any) => 
+  public trackSale = (code: string, amount: number, currency: string = 'USD', metadata?: any) =>
     this.trackEvent(code, 'sale', { ...metadata, amount, currency });
-  
+
   /**
    * Track an event attributed to a specific link.
    */
@@ -223,7 +266,7 @@ class RoutixEngine {
         ...metadata,
         event_type: eventType,
         sdk_v: `react-native-${this.version}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return true;
@@ -233,43 +276,82 @@ class RoutixEngine {
     }
   }
 
+  /**
+   * Collects device metadata for attribution fingerprinting.
+   * Every single access is individually guarded — this method CANNOT crash the app,
+   * even if all optional peer dependencies are missing.
+   */
   private async getDeviceInfo() {
-    // 1. Get or Generate Anonymous Device ID
-    let anonId = await AsyncStorage.getItem('routix_anon_id');
-    if (!anonId) {
-      anonId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      await AsyncStorage.setItem('routix_anon_id', anonId);
+    try {
+      // 1. Get or Generate Anonymous Device ID
+      let anonId = await AsyncStorage.getItem('routix_anon_id');
+      if (!anonId) {
+        anonId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        await AsyncStorage.setItem('routix_anon_id', anonId);
+      }
+
+      // 2. Get or Set First Open Timestamp
+      let firstOpen = await AsyncStorage.getItem('routix_first_open');
+      if (!firstOpen) {
+        firstOpen = new Date().toISOString();
+        await AsyncStorage.setItem('routix_first_open', firstOpen);
+      }
+
+      // 3. Screen dimensions — guarded
+      let screenWidth: number | null = null;
+      let screenHeight: number | null = null;
+      try {
+        const { width, height } = require('react-native').Dimensions.get('window');
+        screenWidth = width;
+        screenHeight = height;
+      } catch (e) { /* ignore */ }
+
+      // 4. Device info — optional peer dep, fully guarded
+      const DIMod = getDeviceInfoModule();
+      const DI = (DIMod?.default ?? DIMod) ?? null;
+
+      // 5. Locale — guarded per platform
+      let locale = 'en_US';
+      try {
+        if (Platform.OS === 'ios') {
+          const sm = require('react-native').NativeModules?.SettingsManager;
+          const s = sm?.settings;
+          locale = s?.appleLocale || s?.appleLanguages?.[0] || 'en_US';
+        } else {
+          locale = require('react-native').NativeModules?.I18nManager?.localeIdentifier || 'en_US';
+        }
+      } catch (e) { /* ignore */ }
+
+      // 6. Timezone — optional peer dep, guarded
+      let timezone = 'unknown';
+      try {
+        timezone = require('react-native-localize')?.getTimeZone() || 'unknown';
+      } catch (e) {
+        console.warn('[Routix] react-native-localize not installed. Timezone will default to \'unknown\'.');
+      }
+
+      return {
+        sdk_version: `react-native-${this.version}`,
+        app_id: DI ? DI.getBundleId() : null,
+        app_version: DI ? DI.getVersion() : null,
+        build_number: DI ? DI.getBuildNumber() : null,
+        os: Platform.OS,
+        os_version: DI ? DI.getSystemVersion() : null,
+        manufacturer: DI ? await DI.getManufacturer() : null,
+        brand: DI ? DI.getBrand() : null,
+        model: DI ? DI.getModel() : null,
+        screen_width: screenWidth,
+        screen_height: screenHeight,
+        locale,
+        timezone,
+        anonymous_device_id: anonId,
+        first_open_timestamp: firstOpen,
+      };
+    } catch (error: any) {
+      // Absolute last resort — no matter what goes wrong, we return minimal info
+      console.warn('[Routix] Device info collection failed gracefully:', error?.message);
+      return { sdk_version: `react-native-${this.version}`, os: Platform.OS };
     }
-
-    // 2. Get or Set First Open Timestamp
-    let firstOpen = await AsyncStorage.getItem('routix_first_open');
-    if (!firstOpen) {
-      firstOpen = new Date().toISOString();
-      await AsyncStorage.setItem('routix_first_open', firstOpen);
-    }
-
-    const { width, height } = require('react-native').Dimensions.get('window');
-
-    return {
-      sdk_version: `react-native-${this.version}`,
-      app_id: DeviceInfo.getBundleId(),
-      app_version: DeviceInfo.getVersion(),
-      build_number: DeviceInfo.getBuildNumber(),
-      os: Platform.OS,
-      os_version: DeviceInfo.getSystemVersion(),
-      manufacturer: await DeviceInfo.getManufacturer(),
-      brand: DeviceInfo.getBrand(),
-      model: DeviceInfo.getModel(),
-      screen_width: width,
-      screen_height: height,
-      locale: Platform.OS === 'ios' 
-        ? (require('react-native').NativeModules.SettingsManager.settings.appleLocale || 
-           require('react-native').NativeModules.SettingsManager.settings.appleLanguages[0])
-        : require('react-native').NativeModules.I18nManager.localeIdentifier,
-      timezone: require('react-native-localize')?.getTimeZone() || 'unknown',
-      anonymous_device_id: anonId,
-      first_open_timestamp: firstOpen,
-    };
   }
 }
 

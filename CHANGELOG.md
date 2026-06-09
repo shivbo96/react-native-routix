@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+* Added console warnings for all optional peer dependencies (`react-native-device-info`, `@react-native-clipboard/clipboard`, `react-native-localize`) when they are missing.
+* Fully guarded device info collection and clipboard attribution checks to ensure the application never crashes even if optional dependencies are completely absent.
+* Cleaned up external dependencies.
+
 ## 1.0.4
 
 * Unified versioning across all Routix SDKs.
