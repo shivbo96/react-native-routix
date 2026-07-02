@@ -62,7 +62,7 @@ export interface ResolveOptions {
 class RoutixEngine {
   private apiKey: string | null = null;
   private readonly baseUrl: string = 'https://api.routix.link';
-  private version: string = '1.0.5';
+  private version: string = '1.0.6';
   private listeners: Array<(match: RoutixMatch) => void> = [];
 
   public initialize(config: RoutixConfig) {
@@ -230,8 +230,11 @@ class RoutixEngine {
     if (!this.apiKey) return false;
 
     try {
+      const deviceInfo = await this.getDeviceInfo();
       await this.makeRequest(`${this.baseUrl}/api/v1/links/${code}/${type}`, {
         ...metadata,
+        anonymous_device_id: metadata?.anonymous_device_id || metadata?.anonymousDeviceId || deviceInfo?.anonymous_device_id,
+        device_info: metadata?.device_info || metadata?.deviceInfo || deviceInfo,
         ...(type === 'track' && metadata?.eventType ? { event_type: metadata.eventType } : {}),
         sdk_v: `react-native-${this.version}`,
         timestamp: new Date().toISOString(),
@@ -262,8 +265,11 @@ class RoutixEngine {
     if (!this.apiKey) return false;
 
     try {
+      const deviceInfo = await this.getDeviceInfo();
       await this.makeRequest(`${this.baseUrl}/api/v1/track`, {
         ...metadata,
+        anonymous_device_id: metadata?.anonymous_device_id || metadata?.anonymousDeviceId || deviceInfo?.anonymous_device_id,
+        device_info: metadata?.device_info || metadata?.deviceInfo || deviceInfo,
         event_type: eventType,
         sdk_v: `react-native-${this.version}`,
         timestamp: new Date().toISOString(),

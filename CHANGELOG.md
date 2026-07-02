@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.6
+
+* Added `anonymous_device_id` persistence and automated mapping to event metadata payloads to resolve conversion attribution gaps.
+
 ## 1.0.5
 
 * Added console warnings for all optional peer dependencies (`react-native-device-info`, `@react-native-clipboard/clipboard`, `react-native-localize`) when they are missing.
